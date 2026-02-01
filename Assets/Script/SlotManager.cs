@@ -16,16 +16,24 @@ public class SlotManager : MonoBehaviour
         if (!_allSlots.Contains(slot)) _allSlots.Add(slot);
         else Debug.LogWarning($"{slot.gameObject.name} tried to register multiple times!");
     }
-    public Slot SelectBestSlot(Content content)
+
+    public void PlaceTile(Tile tile)
     {
-        // Find and return the best suited slot for given content
+        // Find the best slot for the given content and place it there
 
         Slot neareastSlot = _allSlots
-            .OrderBy(item => (item.transform.position - content.transform.position).sqrMagnitude)
+            .OrderBy(item => (item.transform.position - tile.transform.position).sqrMagnitude)
             .ToList()[0]; // Find the slot nearest to where the dragged content tile is
 
-        if (ValidateSlot(neareastSlot, content)) return neareastSlot; // Validate this slot before returning it
-        else return null;
+        Slot selectedSlot = null;
+
+        if (ValidateSlot(neareastSlot, tile)) selectedSlot = neareastSlot; // Validate this slot before using it
+        else selectedSlot = tile.LastOccupiedSlot; // Fallback to last occupied slot if no valid slot found
+
+        selectedSlot.OccupySlot(tile);
+        tile.LastOccupiedSlot = selectedSlot;
+        tile.transform.SetParent(selectedSlot.transform, false); // Move the content tile to be a child of the slot
+        tile.transform.localPosition = Vector3.zero; // Center the content tile in the slot
     }
 
     private void Awake()
@@ -36,9 +44,9 @@ public class SlotManager : MonoBehaviour
         else Instance = this;
     }
 
-    private bool ValidateSlot(Slot slot, Content contentToValidate)
+    private bool ValidateSlot(Slot slot, Tile contentToValidate)
     {
-        Content contentInSlot = slot.ReadContent;
+        Tile contentInSlot = slot.Content;
 
         if (contentInSlot)
         {
