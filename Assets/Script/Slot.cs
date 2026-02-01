@@ -3,34 +3,30 @@ using UnityEngine;
 public class Slot : MonoBehaviour
 {
     // This class handles an slot in the inventory which can store a tile representing a Content
-    private BoxCollider2D _collider; // TODO is this really necessary? i.e do we ever need to click an empty slot and have it react
+
     [SerializeField] private Content _content;
 
     public Content ReadContent => _content;
 
     // TODO requirements, i.e this slot only accepts weapon-type Content
-    public void OccupySlot(Content content)
+    public void OccupySlot(Content newContent)
     {
         if (_content)
         {
-            Debug.LogError($"Slot {gameObject.name} already occupied!"); // TODO proper error handling
+            _content.MergeTogether(newContent); // Merge the two contents if the slot is already occupied
             return;
         }
-
-        _content = content;
-        _collider.enabled = false;
+        else _content = newContent; // Otherwise, occupy the slot with the new content
     }
 
     public void ReleaseSlot()
     {
         _content = null;
-        _collider.enabled = true;
+        // TODO is this enough?
     }
 
     private void Start()
     {
-        _collider = GetComponent<BoxCollider2D>();
-
-        SlotsManager.Instance.RegisterSlot(this);
+        SlotManager.Instance.RegisterSlot(this);
     }
 }

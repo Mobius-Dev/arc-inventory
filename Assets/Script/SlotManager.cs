@@ -2,13 +2,13 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-public class SlotsManager : MonoBehaviour
+public class SlotManager : MonoBehaviour
 {
     // A singleton which holds knowledge of and runs operations on all inventory slots
+    public static SlotManager Instance { get; private set; }
 
-    [SerializeField] private float _maxDistanceForSlotProximity = 0;
     [SerializeField] private List<Slot> _allSlots = new();
-    public static SlotsManager Instance { get; private set; }
+    
     public void RegisterSlot(Slot slot)
     {
         //Called by an empty slot at awake to register itself
@@ -24,7 +24,6 @@ public class SlotsManager : MonoBehaviour
         // TODO in the future, if the slot directly under the conten tile isn't valid, then prioritize nearest stacking possibility rather than an empty slot
 
         List<Slot> sortedSlots = CreateSortedList(content.transform.position);
-        Debug.Log(sortedSlots.Count.ToString());
 
         foreach (Slot slot in sortedSlots)
         {
@@ -53,12 +52,26 @@ public class SlotsManager : MonoBehaviour
         return sortedSlots;
     }
 
-    private bool ValidateSlot(Slot slot, Content content)
+    private bool ValidateSlot(Slot slot, Content contentToValidate)
     {
-        // For now just check if slot is empty no other requirements
+        Content contentInSlot = slot.ReadContent;
 
-        if (slot.ReadContent) return false; // Slot occupied, disqualify
-        // else check for other requirements, none for now
-        else return true;
+        if (contentInSlot)
+        {
+            // Slot is occupied, check if stacking is possible
+
+            if (contentInSlot.ItemStored.ItemID == contentToValidate.ItemStored.ItemID
+                && contentInSlot.QuantityStored + contentToValidate.QuantityStored < contentInSlot.ItemStored.MaxStackSize)
+            {
+                // Same item and merge won't exceed max stack size, valid for stacking
+                return true;
+            }
+
+            else return false;
+        }
+
+        // TODO implement checks for special slot types (e.g. equipment slots)
+
+        else return true; // Slot is empty, valid
     }
 }

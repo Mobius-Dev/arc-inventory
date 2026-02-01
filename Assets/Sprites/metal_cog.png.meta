@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 6d219bbab8ed7f74cb480926272b9176
+guid: ef9a9eb10ec4c004cb11a2e1190c51c5
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2709788939841430306
-    second: laser_pistol_0
+      213: 3763466248922505264
+    second: metal_cog_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,7 +113,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: laser_pistol_0
+      name: metal_cog_0
       rect:
         serializedVersion: 2
         x: 0
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: edc1878f055e46ad0800000000000000
-      internalID: -2709788939841430306
+      spriteID: 030a23b1d948a3430800000000000000
+      internalID: 3763466248922505264
       vertices: []
       indices: 
       edges: []
@@ -147,8 +147,7 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable:
-      laser_pistol_0: -2709788939841430306
+    nameFileIdTable: {}
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
