@@ -14,7 +14,7 @@ public class StackManager : MonoBehaviour
 
     public bool AttemptMerge(Stack stackA, Stack stackB)
     {
-        // Attempt to merge stackB into stackA, executive if valid
+        // Attempt to merge stackB into stackA
 
         if (stackA.ItemStored.ItemID == stackB.ItemStored.ItemID)
         {
@@ -36,5 +36,21 @@ public class StackManager : MonoBehaviour
             }
         }
         return false; // Requirements for merging not met
+    }
+
+    public bool AttemptSplit(Stack originalStack, out Stack newStack)
+    {
+        // Attempt to split the original stack into two stacks of equal quantity
+
+        if (originalStack.QuantityStored > 1)
+        {
+            int splitQuantity = originalStack.QuantityStored / 2;
+            originalStack.QuantityStored -= splitQuantity;
+            newStack = new Stack(originalStack.ItemStored, splitQuantity);
+            return true;
+        }
+
+        newStack = null;
+        return false; // Not enough quantity to split
     }
 }

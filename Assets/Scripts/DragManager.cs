@@ -4,7 +4,6 @@ using UnityEngine.EventSystems;
 public class DragManager : MonoBehaviour
 {
     // A singleton which is used to handle dragging of UI elements
-
     public static DragManager Instance { get; private set; }
 
     [Header("References")]
@@ -12,6 +11,7 @@ public class DragManager : MonoBehaviour
     [SerializeField] private RectTransform _dragLayer;
 
     private Tile _currentTile;
+    private Slot _draggingFrom;
     private Transform _originalParent;
     private Vector2 _offset;
 
@@ -21,10 +21,10 @@ public class DragManager : MonoBehaviour
         else Instance = this;
     }
 
-    public void StartDragging(Tile tile, PointerEventData eventData)
+    public void StartDragging(Tile tile, Slot draggingFrom, PointerEventData eventData)
     {
         _currentTile = tile;
-        _currentTile.LastOccupiedSlot.TileStored = null; //Free up the previously occupied slot
+        _draggingFrom = draggingFrom;
         _originalParent = tile.transform.parent;
 
         // Move item to the "Drag Layer" so it draws on top of everything
@@ -63,8 +63,9 @@ public class DragManager : MonoBehaviour
     {
         if (_currentTile == null) return;
 
-        SlotManager.Instance.PlaceTile(_currentTile);
+        SlotManager.Instance.PlaceTileFromDrag(_currentTile, _draggingFrom);
 
-        _currentTile = null; // Ready to drag another item
+        _currentTile = null; 
+        _draggingFrom = null; // Ready to drag another item
     }
 }

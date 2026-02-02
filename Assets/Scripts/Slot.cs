@@ -7,7 +7,7 @@ public class Slot : MonoBehaviour
     public Tile TileStored;
 
     // TODO requirements, i.e this slot only accepts weapon-type Content
-    private void Start()
+    private void Awake()
     {
         SlotManager.Instance.RegisterSlot(this);
     }
