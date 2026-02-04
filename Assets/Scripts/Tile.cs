@@ -25,9 +25,8 @@ public class Tile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHand
 
     private void Awake()
     {
-        //if (!LastOccupiedSlot) Debug.LogError($"{gameObject.name} is a stray content tile, this is not allowed!");
-        //if (!_itemCount) Debug.LogError(($"{gameObject.name} is missing its item count text element!"));
-        //if (!_image) Debug.LogError(($"{gameObject.name} is missing its image element!"));
+        if (!_itemCount) Debug.LogError(($"{gameObject.name} is missing its item count text element!"));
+        if (!_image) Debug.LogError(($"{gameObject.name} is missing its image element!"));
 
         Initialize();
     }

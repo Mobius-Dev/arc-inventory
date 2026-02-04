@@ -28,11 +28,10 @@ public class StackManager : MonoBehaviour
             }
             else
             {
-                // TODO Partial merge
-                //int spaceLeft = stackA.ItemStored.MaxStackSize - stackA.QuantityStored;
-                //stackA.QuantityStored += spaceLeft;
-                //stackB.QuantityStored -= spaceLeft;
-                return false;
+                int spaceLeft = stackA.ItemStored.MaxStackSize - stackA.QuantityStored;
+                stackA.QuantityStored += spaceLeft;
+                stackB.QuantityStored -= spaceLeft;
+                return true;
             }
         }
         return false; // Requirements for merging not met

@@ -1,6 +1,6 @@
-using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 public class SlotManager : MonoBehaviour
 {
@@ -8,73 +8,24 @@ public class SlotManager : MonoBehaviour
     public static SlotManager Instance { get; private set; }
 
     private List<Slot> _allSlots = new();
-    
+
+    private void Awake()
+    {
+        // Singleton enforcement
+        if (Instance != null && Instance != this) Destroy(this);
+        else Instance = this;
+    }
+
     public void RegisterSlot(Slot slot)
     {
-        //Called by an instance if Slot when it is created to register itself with the manager
-
+        //Called by an instance by Slot when it is created to register itself with the manager
         if (!_allSlots.Contains(slot)) _allSlots.Add(slot);
         else Debug.LogWarning($"{slot.gameObject.name} tried to register multiple times!");
     }
 
-    public void PlaceTileFromDrag(Tile tileToPlace, Slot fallbackSlot)
-    {
-        Slot closestSlot = GetClosestSlot(tileToPlace);
-        Slot selectedSlot = null;
-
-        if (!TryPlaceTileAt(closestSlot, tileToPlace)) // Try place tile at slot closest to the dragged element
-        {
-            if (closestSlot != fallbackSlot && TryPlaceTileAt(fallbackSlot, tileToPlace)) // On failure, try instead the slot the tile came from (unless it's the same slot)
-            {
-                selectedSlot = fallbackSlot;
-            }
-            else
-            {
-                Debug.LogError($"{tileToPlace.name} has no valid slot to occupy");
-                return;
-            }
-        }
-        else
-        {
-            selectedSlot = closestSlot;
-        }
-
-        if (tileToPlace.StackStored.QuantityStored > 0) // Checks if a merge occured, if it did dragged tile was destroyed (workaround because Destroy(gameobject) doesn't work on the same frame)
-        {
-            selectedSlot.TileStored = tileToPlace; // Update the slot to store the placed tile
-            tileToPlace.RefreshTile();
-        }
-    }
-
-    private bool TryPlaceTileAt(Slot targetSlot, Tile targetTile)
-    {
-        if (!targetSlot.TileStored)
-        {
-            // 1. Slot is empty, place the tile here
-            return true;
-        }
-        else if (StackManager.Instance.AttemptMerge(targetSlot.TileStored.StackStored, targetTile.StackStored))
-        {
-            // 2. Slot is not empty, but tried to merge stacks and succeeded, remove the dragged tile and exit
-            targetSlot.TileStored.RefreshTile();
-            Destroy(targetTile.gameObject);
-            return true;
-        }
-        else
-        {
-            // 3. Slot is not empty, merge attempt has failed, unable to place
-            return false;
-        }
-    }
-    private Slot GetClosestSlot(Tile tile)
-    {
-        return _allSlots
-            .OrderBy(item => (item.transform.position - tile.transform.position).sqrMagnitude)
-            .ToList()[0]; // Find the slot closest to where the given tile is on the screen
-    }
-
     public void ReleaseSlotFromTile(Tile tile)
     {
+        //Release a slot holding a given tile
         Slot slotToBeReleased = GetSlotWithTile(tile);
 
         // Safety Check: Only try to empty the slot if we actually found one
@@ -90,18 +41,88 @@ public class SlotManager : MonoBehaviour
 
     public Slot GetSlotWithTile(Tile tile)
     {
-        // TODO redudancy to be removed
-
+        // Returns a slot holding a given tile
         Slot foundSlot = _allSlots.FirstOrDefault(slot => slot.TileStored == tile);
-
         return foundSlot;
     }
 
-    private void Awake()
+    public void PlaceTileFromDrag(Tile tileToPlace, Slot fallbackSlot)
     {
-        // Singleton enforcement
+        Slot selectedSlot = GetClosestSlot(tileToPlace);
 
-        if (Instance != null && Instance != this) Destroy(this);
-        else Instance = this;
+        PlacementResult placementResult = TryPlaceTileAt(selectedSlot, tileToPlace);
+
+        switch(placementResult)
+        {
+            case PlacementResult.MergedFully:
+                // Tile was fully merged, no need to place anything
+                return;
+            case PlacementResult.MovedToEmpty:
+                selectedSlot.TileStored = tileToPlace;
+                tileToPlace.RefreshTile();
+                break;
+            case PlacementResult.MergedPartially:
+                // Partial Success: We merged some, but have leftovers.
+                // The leftovers must go back to the fallback slot.
+                SnapTileBack(tileToPlace, fallbackSlot);
+                return;
+            case PlacementResult.Failed:
+            default:
+                // Failure: We couldn't do anything at the target. 
+                // Send the whole thing back.
+                SnapTileBack(tileToPlace, fallbackSlot);
+                return;
+        }
+    }
+
+    private void SnapTileBack(Tile tileToPlace, Slot fallbackSlot)
+    {
+        PlacementResult placementResult = TryPlaceTileAt(fallbackSlot, tileToPlace);
+        switch (placementResult)
+        {
+            case PlacementResult.MergedFully:
+                // Tile was fully merged, no need to place anything
+                return;
+            case PlacementResult.MovedToEmpty:
+                fallbackSlot.TileStored = tileToPlace;
+                tileToPlace.RefreshTile();
+                break;
+            default:
+                Debug.LogError($"Could not fully return tile {tileToPlace.name} to its fallback slot {fallbackSlot.name}. This should never happen!");
+                break;
+        }
+    }
+
+    private PlacementResult TryPlaceTileAt(Slot targetSlot, Tile targetTile)
+    {
+        // Handle Empty Slot (Guard Clause)
+        if (!targetSlot.TileStored)
+        {
+            return PlacementResult.MovedToEmpty;
+        }
+
+        // Handle Occupied Slot (Attempt Merge)
+        if (!StackManager.Instance.AttemptMerge(targetSlot.TileStored.StackStored, targetTile.StackStored))
+        {
+            return PlacementResult.Failed;
+        }
+
+        // Merge succeeded (Partial or Full), update the visuals immediately
+        targetSlot.TileStored.RefreshTile();
+
+        // Handle Cleanup
+        if (targetTile.StackStored.QuantityStored == 0)
+        {
+            Destroy(targetTile.gameObject);
+            return PlacementResult.MergedFully;
+        }
+
+        return PlacementResult.MergedPartially;
+    }
+    private Slot GetClosestSlot(Tile tile)
+    {
+        return _allSlots
+            .OrderBy(item => (item.transform.position - tile.transform.position).sqrMagnitude)
+            .ToList()[0]; // Find the slot closest to where the given tile is on the screen
     }
 }
