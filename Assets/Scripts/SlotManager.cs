@@ -59,7 +59,6 @@ public class SlotManager : MonoBehaviour
                 return;
             case PlacementResult.MovedToEmpty:
                 selectedSlot.TileStored = tileToPlace;
-                tileToPlace.RefreshTile();
                 break;
             case PlacementResult.MergedPartially:
                 // Partial Success: We merged some, but have leftovers.
@@ -85,7 +84,6 @@ public class SlotManager : MonoBehaviour
                 return;
             case PlacementResult.MovedToEmpty:
                 fallbackSlot.TileStored = tileToPlace;
-                tileToPlace.RefreshTile();
                 break;
             default:
                 Debug.LogError($"Could not fully return tile {tileToPlace.name} to its fallback slot {fallbackSlot.name}. This should never happen!");
@@ -106,9 +104,6 @@ public class SlotManager : MonoBehaviour
         {
             return PlacementResult.Failed;
         }
-
-        // Merge succeeded (Partial or Full), update the visuals immediately
-        targetSlot.TileStored.RefreshTile();
 
         // Handle Cleanup
         if (targetTile.StackStored.QuantityStored == 0)

@@ -7,8 +7,7 @@ using UnityEngine.UI;
 public class Tile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     // This class handles visual representation of an item stack in the inventory UI
-
-    public Stack StackStored;
+    public Stack StackStored { get; private set; }
 
     public Slot LastOccupiedSlot;
     // If dragging we need to remember where the tile came from in case no new valid slot for this item is found
@@ -35,7 +34,7 @@ public class Tile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHand
     {
         if (StackStored == null) // TODO Remove Hack
         {
-            StackStored = new Stack(_itemDef, 1);
+            AssignStack(new Stack(_itemDef, 1));
         }
         if (_forceCount > 0)
         {
@@ -44,8 +43,28 @@ public class Tile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHand
         }
 
         _image.sprite = StackStored.ItemStored.Sprite;
+    }
 
-        RefreshTile();
+    public void AssignStack(Stack newStack)
+    {
+        // Unsubscribe from old stack to prevent memory leaks/bugs
+        if (StackStored != null)
+            StackStored.OnQuantityChanged -= RefreshText;
+
+        // Assign new stack and subscribe to its events
+        StackStored = newStack;
+
+        if (StackStored != null)
+        {
+            StackStored.OnQuantityChanged += RefreshText;
+
+            // Update immediately for the first time
+            RefreshText(StackStored.QuantityStored);
+        }
+        else
+        {
+            Debug.LogError("Tried to assign a null stack!");
+        }
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -54,8 +73,7 @@ public class Tile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHand
 
         if (InputManager.Instance.IsSplitModifierPressed() && StackManager.Instance.AttemptSplit(this.StackStored, out Stack splitStack))
         {
-            RefreshTile();
-            Tile splitTile = ItemSpawner.Instance.SpawnNewItemTile(this.gameObject, splitStack, this.transform.parent);
+            Tile splitTile = SpawnManager.Instance.SpawnNewItemTile(this.gameObject, splitStack, this.transform.parent);
             DragManager.Instance.StartDragging(splitTile, _lastOccupied, eventData);
         }
         else
@@ -75,18 +93,8 @@ public class Tile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHand
         DragManager.Instance.FinishDragging(eventData);
     }
 
-    public void RefreshTile()
+    private void RefreshText(int quantity)
     {
-        //Update the visual representation of this tile based on its current data
-
-        Slot currentSlot = SlotManager.Instance.GetSlotWithTile(this);
-        if (currentSlot)
-        {
-            Transform slotTransform = SlotManager.Instance.GetSlotWithTile(this).transform;
-            transform.SetParent(slotTransform.transform, false); // Move the content tile to be a child of the slot
-            transform.localPosition = Vector3.zero; // Center the content tile in the slot
-        }
-
-        _itemCount.text = StackStored.QuantityStored.ToString();
+        _itemCount.text = quantity.ToString();
     }
 }
