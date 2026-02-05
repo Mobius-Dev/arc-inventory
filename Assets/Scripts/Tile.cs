@@ -73,7 +73,7 @@ public class Tile : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHand
 
         if (InputManager.Instance.IsSplitModifierPressed() && StackManager.Instance.AttemptSplit(this.StackStored, out Stack splitStack))
         {
-            Tile splitTile = SpawnManager.Instance.SpawnNewItemTile(this.gameObject, splitStack, this.transform.parent);
+            Tile splitTile = SpawnManager.Instance.SpawnTileFromSplitting(this.gameObject, splitStack, this.transform.parent);
             DragManager.Instance.StartDragging(splitTile, _lastOccupied, eventData);
         }
         else
